@@ -29,7 +29,7 @@ def receive_logs():
     # 1. Verificar token
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Token ") or auth_header.split()[1] not in VALID_TOKENS:
-        return jsonify({"error": "Quién sos, bro?"}), 401
+        return jsonify({"error": "Tu no sos mi bro, bro"}), 401
 
     # 2. Recibir logs (puede ser uno o varios)
     logs = request.get_json()
