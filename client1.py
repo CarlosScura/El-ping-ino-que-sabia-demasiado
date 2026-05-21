@@ -1,29 +1,45 @@
 import requests
+import random
+import time
 from datetime import datetime
 
-# URL del servidor central
 SERVER_URL = "http://127.0.0.1:6039/logs"
-
-# Token válido para este servicio
 TOKEN = "SERVICE1_TOKEN"
 
-def send_log():
-    # Armar un log falso
+SEVERITIES = ["INFO", "DEBUG", "WARNING", "ERROR", "CRITICAL"]
+MESSAGES = [
+    "Usuario inició sesión",
+    "Cache reconstruida correctamente",
+    "Timeout en la conexión con base de datos",
+    "Archivo de configuración no encontrado",
+    "Servicio reiniciado automáticamente",
+    "Token inválido detectado",
+    "Operación completada con éxito"
+]
+
+def send_random_log():
     log = {
         "timestamp": datetime.now().isoformat(),
         "service": "auth-service",
-        "severity": "ERROR",
-        "message": "Intento de login fallido"
+        "severity": random.choice(SEVERITIES),
+        "message": random.choice(MESSAGES)
     }
 
-    # Enviar el log al servidor
-    response = requests.post(
-        SERVER_URL,
-        json=log,
-        headers={"Authorization": f"Token {TOKEN}"}
-    )
-
-    print("Respuesta del servidor:", response.json())
+    try:
+        response = requests.post(
+            SERVER_URL,
+            json=log,
+            headers={"Authorization": f"Token {TOKEN}"}
+        )
+        print("Log enviado:", log)
+        print("Respuesta del servidor:", response.json())
+    except Exception as e:
+        print("Error al enviar log:", e)
 
 if __name__ == "__main__":
-    send_log()
+    try:
+        while True:
+            send_random_log()
+            time.sleep(random.uniform(1, 5))
+    except KeyboardInterrupt:
+        print("\nServicio detenido manualmente.")
