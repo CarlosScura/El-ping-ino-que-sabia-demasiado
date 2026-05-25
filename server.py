@@ -5,7 +5,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 # Tokens válidos
-VALID_TOKENS = {"SERVICE1_TOKEN", "SERVICE2_TOKEN"}
+VALID_TOKENS = {"SERVICE1_TOKEN", "SERVICE2_TOKEN","SERVICE3_TOKEN"}
 
 # Inicializar base de datos
 def init_db():
@@ -29,7 +29,7 @@ def receive_logs():
     # 1. Verificar token
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Token ") or auth_header.split()[1] not in VALID_TOKENS:
-        return jsonify({"error": "Tu no sos mi bro, bro"}), 401
+        return jsonify({"error": "Tu no eres mi bro, bro"}), 401
 
     # 2. Recibir logs (puede ser uno o varios)
     logs = request.get_json()
@@ -54,6 +54,56 @@ def receive_logs():
     conn.close()
 
     return jsonify({"status": "ok", "received": len(logs)})
+
+@app.route("/logs", methods=["GET"])
+def get_logs():
+    # Parámetros opcionales
+    timestamp_start = request.args.get("timestamp_start")
+    timestamp_end = request.args.get("timestamp_end")
+    received_start = request.args.get("received_at_start")
+    received_end = request.args.get("received_at_end")
+
+    conn = sqlite3.connect("logs.db")
+    c = conn.cursor()
+
+    query = "SELECT id, timestamp, service, severity, message, received_at FROM logs WHERE 1=1"
+    params = []
+
+    # Filtros dinámicos
+    if timestamp_start:
+        query += " AND timestamp >= ?"
+        params.append(timestamp_start)
+    if timestamp_end:
+        query += " AND timestamp <= ?"
+        params.append(timestamp_end)
+    if received_start:
+        query += " AND received_at >= ?"
+        params.append(received_start)
+    if received_end:
+        query += " AND received_at <= ?"
+        params.append(received_end)
+
+    query += " ORDER BY received_at DESC"
+
+    c.execute(query, params)
+    rows = c.fetchall()
+    conn.close()
+
+    # Convertir a lista de diccionarios
+    logs = [
+        {
+            "id": row[0],
+            "timestamp": row[1],
+            "service": row[2],
+            "severity": row[3],
+            "message": row[4],
+            "received_at": row[5]
+        }
+        for row in rows
+    ]
+
+    return jsonify(logs)
+
 
 if __name__ == "__main__":
     init_db()
